@@ -1,0 +1,142 @@
+.navbar-container {
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.navbar-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Brand Logo */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #d97706;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-icon {
+  color: #d97706;
+}
+
+/* Nav Links */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #475569;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: #d97706;
+  background-color: #fffbebfb;
+}
+
+.nav-link.active {
+  color: #d97706;
+  background-color: #fef3c7;
+  font-weight: 700;
+}
+
+.flex-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Admin Badge */
+.admin-badge-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fffbebfb;
+  color: #b45309;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid #fde68a;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-badge-link:hover {
+  background-color: #fde68a;
+  color: #92400e;
+}
+
+/* User Action Area */
+.nav-user-action {
+  display: flex;
+  align-items: center;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.welcome-text {
+  font-size: 14px;
+  color: #334155;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #fef2f2;
+}
+
+.login-btn {
+  background-color: #d97706;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+.brand-logo {
+  height: 65px; /* Adjust this up or down depending on how big you want the logo */
+  width: auto;
+  object-fit: contain;
+}
