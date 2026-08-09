@@ -74,12 +74,12 @@ const Admin = () => {
       setApiError('');
 
       // Fetch Products
-      const prodRes = await axios.get('http://localhost:5000/api/products');
+      const prodRes = await axios.get('https://niva-handloom-backend.onrender.com/api/products');
       setProducts(prodRes.data || []);
 
       // Fetch Orders
       if (user?.token) {
-        const orderRes = await axios.get('http://localhost:5000/api/orders', getAuthConfig());
+        const orderRes = await axios.get('https://niva-handloom-backend.onrender.com/api/orders', getAuthConfig());
         setOrders(orderRes.data || []);
       }
     } catch (err) {
@@ -103,7 +103,7 @@ const Admin = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/products/${editingProductId}`,
+        `https://niva-handloom-backend.onrender.com/api/products/${editingProductId}`,
         {
           ...editProduct,
           originalPrice: Number(editProduct.originalPrice),
@@ -145,7 +145,7 @@ const Admin = () => {
     formData.append('initialQuantity', newProduct.currentStock);
     formData.append('image', newProduct.imageFile);
 
-    await axios.post('http://localhost:5000/api/products', formData, {
+    await axios.post('https://niva-handloom-backend.onrender.com/api/products', formData, {
       headers: {
         Authorization: `Bearer ${user?.token || ''}`,
         'Content-Type': 'multipart/form-data',
@@ -181,7 +181,7 @@ const Admin = () => {
   const handleUpdateStock = async (productId) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/products/${productId}`,
+        `https://niva-handloom-backend.onrender.com/api/products/${productId}`,
         { currentStock: Number(tempStock) },
         getAuthConfig()
       );
@@ -200,7 +200,7 @@ const Admin = () => {
     }
 
     try {
-      await axios.delete(`http://localhost:5000/api/products/${productId}`, getAuthConfig());
+      await axios.delete(`https://niva-handloom-backend.onrender.com/api/products/${productId}`, getAuthConfig());
 
       if (editingProductId === productId) {
         closeEditProduct();
@@ -221,7 +221,7 @@ const Admin = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/orders/${orderId}/status`,
+        `https://niva-handloom-backend.onrender.com/api/orders/${orderId}/status`,
         { orderStatus: newStatus },
         getAuthConfig()
       );

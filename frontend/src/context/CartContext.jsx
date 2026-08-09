@@ -85,7 +85,7 @@ export const CartProvider = ({ children }) => {
       const guestItems = readCartFromStorage(guestCartKey);
 
       try {
-        const { data } = await axios.get('http://localhost:5000/api/cart', {
+        const { data } = await axios.get('https://niva-handloom-backend.onrender.com/api/cart', {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
@@ -100,7 +100,7 @@ export const CartProvider = ({ children }) => {
         if (guestItems.length > 0) {
           writeCartToStorage(guestCartKey, []);
           await axios.put(
-            'http://localhost:5000/api/cart',
+            'https://niva-handloom-backend.onrender.com/api/cart',
             { items: mergedItems },
             {
               headers: {
@@ -127,7 +127,7 @@ export const CartProvider = ({ children }) => {
 
     if (user?.token) {
       await axios.put(
-        'http://localhost:5000/api/cart',
+        'https://niva-handloom-backend.onrender.com/api/cart',
         { items: normalizedItems },
         {
           headers: {
@@ -200,7 +200,7 @@ export const CartProvider = ({ children }) => {
     writeCartToStorage(cartStorageKey, []);
 
     if (user?.token) {
-      await axios.delete('http://localhost:5000/api/cart', {
+      await axios.delete('https://niva-handloom-backend.onrender.com/api/cart', {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },

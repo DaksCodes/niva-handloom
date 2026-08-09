@@ -53,7 +53,7 @@ export const WishlistProvider = ({ children }) => {
       const guestItems = readWishlistFromStorage(guestWishlistKey);
 
       try {
-        const { data } = await axios.get('http://localhost:5000/api/wishlist', {
+        const { data } = await axios.get('https://niva-handloom-backend.onrender.com/api/wishlist', {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
@@ -68,7 +68,7 @@ export const WishlistProvider = ({ children }) => {
         if (guestItems.length > 0) {
           writeWishlistToStorage(guestWishlistKey, []);
           await axios.put(
-            'http://localhost:5000/api/wishlist',
+            'https://niva-handloom-backend.onrender.com/api/wishlist',
             { items: mergedItems },
             {
               headers: {
@@ -95,7 +95,7 @@ export const WishlistProvider = ({ children }) => {
 
     if (user?.token) {
       await axios.put(
-        'http://localhost:5000/api/wishlist',
+        'https://niva-handloom-backend.onrender.com/api/wishlist',
         { items: normalizedItems },
         {
           headers: {
@@ -142,7 +142,7 @@ export const WishlistProvider = ({ children }) => {
     writeWishlistToStorage(wishlistStorageKey, []);
 
     if (user?.token) {
-      await axios.delete('http://localhost:5000/api/wishlist', {
+      await axios.delete('https://niva-handloom-backend.onrender.com/api/wishlist', {
         headers: {
           Authorization: `Bearer ${user.token}`,
         },

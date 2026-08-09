@@ -29,7 +29,7 @@ const MyOrders = () => {
             Authorization: `Bearer ${user.token}`,
           },
         };
-        const { data } = await axios.get('http://localhost:5000/api/orders/myorders', config);
+        const { data } = await axios.get('https://niva-handloom-backend.onrender.com/api/orders/myorders', config);
         setOrders(data);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
@@ -48,7 +48,7 @@ const MyOrders = () => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/receive`, {}, config);
+      await axios.put(`https://niva-handloom-backend.onrender.com/api/orders/${orderId}/receive`, {}, config);
       
       setOrders(orders.map(order => 
         order._id === orderId ? { ...order, isCustomerReceived: true, orderStatus: 'Completed' } : order

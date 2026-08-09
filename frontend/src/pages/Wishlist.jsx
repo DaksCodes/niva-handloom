@@ -13,7 +13,7 @@ const Wishlist = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/products');
+        const { data } = await axios.get('https://niva-handloom-backend.onrender.com/api/products');
         setProducts(data || []);
       } catch (error) {
         console.error('Failed to fetch products for wishlist:', error);

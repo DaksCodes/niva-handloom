@@ -52,7 +52,7 @@ const Cart = () => {
         },
       };
 
-      await axios.post('http://localhost:5000/api/orders', orderData, config);
+      await axios.post('https://niva-handloom-backend.onrender.com/api/orders', orderData, config);
 
       // Clear Cart on Success
       await clearCart();

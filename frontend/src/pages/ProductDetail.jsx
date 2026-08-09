@@ -18,7 +18,7 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
+        const { data } = await axios.get(`https://niva-handloom-backend.onrender.com/api/products/${id}`);
         setProduct(data);
       } catch (err) {
         console.error(err);

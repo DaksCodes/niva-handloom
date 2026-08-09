@@ -21,7 +21,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const { data } = await axios.post('http://localhost:5000/api/users/register', {
+      const { data } = await axios.post('https://niva-handloom-backend.onrender.com/api/users/register', {
         name,
         email,
         phone,
