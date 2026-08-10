@@ -76,7 +76,11 @@ const Home = () => {
           <div
             key={slide.id}
             className={`slide ${index === currentSlide ? 'active' : ''}`}
-            style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)), url(${slide.image})` }}
+            style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)), url(${slide.image})`, 
+                    zIndex: index === currentSlide ? 10 : 0, 
+              pointerEvents: index === currentSlide ? 'auto' : 'none'
+          }}
+            
           >
             {index === currentSlide && (
               <div className="slide-content">

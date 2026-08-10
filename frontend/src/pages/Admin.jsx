@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +32,8 @@ const Admin = () => {
     imagePreview: '',
     oneLinerDescription: '',
   });
+
+  const fileInputRef = useRef(null);
 
   // Editing Stock State
   const [editingStockId, setEditingStockId] = useState(null);
@@ -170,7 +172,7 @@ const Admin = () => {
       imagePreview: '',
       oneLinerDescription: '',
     });
-
+    handleClearImage();
     fetchData();
   } catch (err) {
     alert(err.response?.data?.message || 'Failed to add product');
@@ -230,6 +232,19 @@ const Admin = () => {
       alert('Failed to update order status');
     }
   };
+
+
+  const handleClearImage = () => {
+  setNewProduct((prev) => ({
+    ...prev,
+    imageFile: null,
+    imagePreview: '',
+  }));
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+};
 
   // Device se File pick karke Base64 string banane ka function
 const handleImageChange = (e) => {
@@ -400,6 +415,7 @@ const handleImageChange = (e) => {
               <div className="file-upload-box">
                 <label className="file-label">Upload Image from Device:</label>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
@@ -407,11 +423,34 @@ const handleImageChange = (e) => {
                 />
 
                 {newProduct.imagePreview && (
-                  <div className="preview-container">
-                    <img src={newProduct.imagePreview} alt="Preview" className="img-preview" />
-                    <span className="preview-text">Preview Selected Image</span>
-                  </div>
-                )}
+  <div className="preview-container" style={{ position: 'relative' }}>
+    <img src={newProduct.imagePreview} alt="Preview" className="img-preview" />
+    <span className="preview-text">Preview Selected Image</span>
+
+    <button
+      type="button"
+      onClick={handleClearImage}
+      aria-label="Remove selected image"
+      title="Remove selected image"
+      style={{
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        border: 'none',
+        background: 'rgba(0, 0, 0, 0.65)',
+        color: '#fff',
+        borderRadius: '50%',
+        width: '32px',
+        height: '32px',
+        display: 'grid',
+        placeItems: 'center',
+        cursor: 'pointer',
+      }}
+    >
+      <Trash2 size={16} />
+    </button>
+  </div>
+)}
               </div>
 
               <button type="submit" className="submit-btn">Add Product to Store</button>
