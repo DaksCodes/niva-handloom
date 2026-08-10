@@ -1,6 +1,7 @@
 const Order = require('../models/order');
 const Product = require('../models/product');
 const { sendAdminOrderEmail } = require('../utils/sendEmail');
+const { sendAdminSms } = require('../utils/sendSms');
 const normalizeOrder = (order) => {
   if (!order) {
     return order;
@@ -44,6 +45,7 @@ const createOrder = async (req, res) => {
       
       // Email bhejein (bina await ke taaki api response slow na ho)
       sendAdminOrderEmail(createdOrder);
+      sendAdminSms(createdOrder);
     } catch (emailError) {
       console.error('Order ban gaya par email bhejne mein error aayi:', emailError);
     }
