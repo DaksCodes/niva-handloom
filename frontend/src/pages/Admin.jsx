@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2, Filter } from 'lucide-react';
+import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2, Filter, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Admin.css';
 
@@ -17,6 +17,9 @@ const Admin = () => {
   const [filterDelivery, setFilterDelivery] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState('All');
+
+  // Tooltip State for Line Graph
+  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   // New Product Form State
   const [newProduct, setNewProduct] = useState({
@@ -276,17 +279,12 @@ const Admin = () => {
     const orderDate = new Date(o.createdAt || o.date || Date.now());
     const now = new Date();
 
-    // Delivery Filter
     if (filterDelivery !== 'All' && deliveryVal !== filterDelivery) {
       return false;
     }
-
-    // Status Filter
     if (filterStatus !== 'All' && statusVal !== filterStatus) {
       return false;
     }
-
-    // Date Filter
     if (filterDate === 'this_month') {
       if (orderDate.getMonth() !== now.getMonth() || orderDate.getFullYear() !== now.getFullYear()) {
         return false;
@@ -302,8 +300,78 @@ const Admin = () => {
         return false;
       }
     }
-
     return true;
+  });
+
+  // --- Calculations for Insights (Monthly Revenue & Status Distribution) ---
+  const getMonthlyRevenueData = () => {
+    const monthsMap = {};
+    const now = new Date();
+    // Generate last 6 months list for chronological display
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+      monthsMap[key] = 0;
+    }
+
+    orders.forEach((o) => {
+      const date = new Date(o.createdAt || o.date || Date.now());
+      const key = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+      if (monthsMap[key] !== undefined) {
+        monthsMap[key] += Number(o.totalPrice || 0);
+      }
+    });
+
+    return Object.keys(monthsMap).map((month) => ({
+      month,
+      revenue: monthsMap[month],
+    }));
+  };
+
+  const monthlyData = getMonthlyRevenueData();
+  const maxRevenue = Math.max(...monthlyData.map((d) => d.revenue), 1000);
+
+  const getOrderStatusCounts = () => {
+    const counts = { Requested: 0, Approved: 0, Rejected: 0, Completed: 0 };
+    orders.forEach((o) => {
+      const status = o.orderStatus || o.status || 'Requested';
+      if (counts[status] !== undefined) {
+        counts[status] += 1;
+      } else {
+        counts[status] = (counts[status] || 0) + 1;
+      }
+    });
+    return counts;
+  };
+
+  const statusCounts = getOrderStatusCounts();
+  const totalOrdersCount = orders.length || 1;
+
+  // Status Colors
+  const statusColors = {
+    Requested: '#f59e0b', // Amber
+    Approved: '#3b82f6',  // Blue
+    Rejected: '#ef4444',  // Red
+    Completed: '#10b981', // Green
+  };
+
+  // Build SVG Pie Slices
+  let cumulativePercent = 0;
+  const pieSlices = Object.keys(statusCounts).map((status) => {
+    const count = statusCounts[status];
+    const percentage = (count / totalOrdersCount) * 100;
+    const startAngle = (cumulativePercent / 100) * 360;
+    cumulativePercent += percentage;
+    const endAngle = (cumulativePercent / 100) * 360;
+
+    return {
+      status,
+      count,
+      percentage: percentage.toFixed(1),
+      color: statusColors[status] || '#cbd5e1',
+      startAngle,
+      endAngle,
+    };
   });
 
   if (loading) {
@@ -341,6 +409,12 @@ const Admin = () => {
           onClick={() => setActiveTab('orders')}
         >
           <ShoppingBag size={18} /> Manage Orders ({orders.length})
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'insights' ? 'active' : ''}`}
+          onClick={() => setActiveTab('insights')}
+        >
+          <TrendingUp size={18} /> Insights
         </button>
       </div>
 
@@ -824,6 +898,162 @@ const Admin = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Tab 3: Insights */}
+      {activeTab === 'insights' && (
+        <div className="admin-content-grid">
+          
+          {/* Card 1: Monthly Revenue Line Graph */}
+          <div className="admin-card">
+            <h3><TrendingUp size={20} className="icon-accent" /> Monthly Revenue Trend</h3>
+            <p className="sub-info" style={{ marginTop: '-8px', marginBottom: '20px' }}>
+              Hover or touch data points to view exact revenue amounts.
+            </p>
+
+            <div className="line-graph-container">
+              <svg viewBox="0 0 600 250" className="revenue-svg">
+                {/* Horizontal Grid lines */}
+                {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                  const y = 30 + ratio * 160;
+                  const val = Math.round(maxRevenue * (1 - ratio));
+                  return (
+                    <g key={idx}>
+                      <line x1="50" y1={y} x2="570" y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                      <text x="42" y={y + 4} fontSize="10" fill="#94a3b8" textAnchor="end">
+                        ₹{val}
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Polyline path coordinates */}
+                {(() => {
+                  const pts = monthlyData.map((d, index) => {
+                    const x = 70 + index * (500 / (monthlyData.length - 1 || 1));
+                    const y = 190 - (d.revenue / maxRevenue) * 160;
+                    return { x, y, ...d };
+                  });
+
+                  const pointsString = pts.map((p) => `${p.x},${p.y}`).join(' ');
+
+                  return (
+                    <>
+                      {/* Trend Line */}
+                      <polyline
+                        fill="none"
+                        stroke="#d97706"
+                        strokeWidth="3"
+                        points={pointsString}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      {/* Data Points */}
+                      {pts.map((p, idx) => (
+                        <g key={idx} className="graph-node">
+                          <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r="6"
+                            fill="#ffffff"
+                            stroke="#d97706"
+                            strokeWidth="3"
+                            onMouseEnter={() => setHoveredPoint(p)}
+                            onMouseLeave={() => setHoveredPoint(null)}
+                            onTouchStart={() => setHoveredPoint(p)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <text x={p.x} y="215" fontSize="11" fill="#64748b" textAnchor="middle">
+                            {p.month.split(' ')[0]}
+                          </text>
+                        </g>
+                      ))}
+                    </>
+                  );
+                })()}
+              </svg>
+
+              {/* Hover / Touch Tooltip Box */}
+              {hoveredPoint && (
+                <div className="graph-tooltip">
+                  <strong>{hoveredPoint.month}</strong>
+                  <span>Revenue: ₹{hoveredPoint.revenue.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card 2: Order Status Distribution Pie Chart */}
+          <div className="admin-card">
+            <h3><ShoppingBag size={20} className="icon-accent" /> Order Status Distribution</h3>
+            <p className="sub-info" style={{ marginTop: '-8px', marginBottom: '20px' }}>
+              Breakdown of total orders by current lifecycle status.
+            </p>
+
+            <div className="insights-split-grid">
+              {/* Visual Pie / Donut representation */}
+              {/* Visual Pie / Donut representation */}
+              <div className="pie-chart-wrapper">
+                <svg viewBox="0 0 120 120" className="pie-svg">
+                  <circle cx="60" cy="60" r="45" fill="#f8fafc" />
+                  {(() => {
+                    let cumulativeAngle = 0;
+                    return pieSlices.map((slice, idx) => {
+                      const angle = (slice.count / totalOrdersCount) * 360;
+                      const strokeDasharray = `${(angle / 360) * 282.7} 282.7`;
+                      const strokeDashoffset = -((cumulativeAngle / 360) * 282.7);
+                      cumulativeAngle += angle;
+
+                      if (slice.count === 0) return null;
+
+                      return (
+                        <circle
+                          key={idx}
+                          cx="60"
+                          cy="60"
+                          r="45"
+                          fill="transparent"
+                          stroke={slice.color}
+                          strokeWidth="24"
+                          strokeDasharray={strokeDasharray}
+                          strokeDashoffset={strokeDashoffset}
+                          className="pie-slice"
+                        />
+                      );
+                    });
+                  })()}
+                  {/* Counter-rotation apply ki hai taaki text bilkul seedha aaye */}
+                  <g transform="rotate(90 60 60)">
+                    <text x="60" y="57" fontSize="15" fontWeight="bold" fill="#1e293b" textAnchor="middle">
+                      {orders.length}
+                    </text>
+                    <text x="60" y="73" fontSize="10" fill="#64748b" textAnchor="middle">
+                      Total
+                    </text>
+                  </g>
+                </svg>
+              </div>
+
+              {/* Numerical Legend & Counts */}
+              <div className="status-legend-list">
+                {pieSlices.map((slice, idx) => (
+                  <div key={idx} className="legend-item-card">
+                    <div className="legend-left">
+                      <span className="legend-color-dot" style={{ backgroundColor: slice.color }}></span>
+                      <span className="legend-status-name">{slice.status}</span>
+                    </div>
+                    <div className="legend-right">
+                      <span className="legend-count-num"><b>{slice.count}</b> orders</span>
+                      <span className="legend-percentage">({slice.percentage}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       )}
 

@@ -30,7 +30,15 @@ const MyOrders = () => {
           },
         };
         const { data } = await axios.get('https://niva-handloom-backend.onrender.com/api/orders/myorders', config);
-        setOrders(data);
+        
+        // Sort orders to display the latest one at the top (descending order)
+        const sortedOrders = data.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0);
+          const dateB = new Date(b.createdAt || 0);
+          return dateB - dateA;
+        });
+
+        setOrders(sortedOrders);
       } catch (err) {
         console.error('Failed to fetch orders:', err);
       } finally {
