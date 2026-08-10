@@ -3,6 +3,7 @@ import axios from 'axios';
 import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2, Filter, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Admin.css';
+import OrderInvoice from '../components/OrderInvoice';
 import * as XLSX from 'xlsx';
 
 const Admin = () => {

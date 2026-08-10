@@ -14,6 +14,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import OrderInvoice from '../components/OrderInvoice'; // <-- Imported OrderInvoice
 import './MyOrders.css';
 
 const MyOrders = () => {
@@ -190,8 +191,11 @@ const MyOrders = () => {
                       <CheckCircle2 size={16} /> Delivered & Received
                     </div>
                   )}
-                </div>
 
+                  {/* <-- Added Customer Invoice Download Button --> */}
+                  <OrderInvoice order={order} />
+
+                </div>
               </div>
             </div>
           );
