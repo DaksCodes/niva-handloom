@@ -37,6 +37,16 @@ const createOrder = async (req, res) => {
     });
 
     const createdOrder = await order.save();
+    try {
+      // User ki details (naam, email) aur Product ki details email ke liye nikal rahe hain
+      await createdOrder.populate('user', 'name email');
+      await createdOrder.populate('orderItems.product', 'name price');
+      
+      // Email bhejein (bina await ke taaki api response slow na ho)
+      sendAdminOrderEmail(createdOrder);
+    } catch (emailError) {
+      console.error('Order ban gaya par email bhejne mein error aayi:', emailError);
+    }
     res.status(201).json(createdOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });
