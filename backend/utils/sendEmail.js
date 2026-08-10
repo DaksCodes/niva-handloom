@@ -3,11 +3,17 @@ const nodemailer = require('nodemailer');
 const sendAdminOrderEmail = async (order) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // Kabhi kabhi network delay ki wajah se Render par timeout hota hai, isliye limit badha do
+      connectionTimeout: 10000, 
+      greetingTimeout: 10000,
+      socketTimeout: 10000
     });
 
     // Products ki list ko HTML table rows mein convert karna
