@@ -3,6 +3,7 @@ import axios from 'axios';
 import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2, Filter, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Admin.css';
+import * as XLSX from 'xlsx';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('products');
@@ -104,6 +105,59 @@ const Admin = () => {
     }
   }, [user]);
 
+  // --- Excel Export Function ---
+  // --- Ultimate Fixed Excel Export Function ---
+  const exportToExcel = () => {
+    if (!orders || orders.length === 0) {
+      alert("No orders available to export!");
+      return;
+    }
+
+    // Products ka ek quick dictionary/map bana lete hain O(1) lookup ke liye
+    const productMap = {};
+    if (products && products.length > 0) {
+      products.forEach((p) => {
+        productMap[String(p._id)] = p;
+      });
+    }
+
+    const excelData = [];
+
+    orders.forEach((order) => {
+      const items = order.orderItems || order.items || order.products || [order];
+
+      items.forEach((item) => {
+        // item.product ya toh object hoga ya ID string
+        const prodId = typeof item.product === 'object' && item.product !== null 
+          ? String(item.product._id || item.product.id || '') 
+          : String(item.product || '');
+
+        // Map se ya item ke andar se product dhoondhein
+        const matchedProduct = productMap[prodId] || (typeof item.product === 'object' ? item.product : null) || {};
+
+        excelData.push({
+          "Product Name": matchedProduct.name || item.name || item.productName || 'N/A',
+          "Company Name": matchedProduct.companyName || matchedProduct.company || 'N/A',
+          "Category": matchedProduct.category || item.category || 'N/A',
+          "Type": matchedProduct.type || item.type || 'N/A',
+          "Base Price": matchedProduct.originalPrice || matchedProduct.price || item.basePrice || 0,
+          "Selling Price": item.price || matchedProduct.price || 0,
+          "Size": matchedProduct.size || item.size || 'N/A',
+          "Fabric": matchedProduct.fabricType || matchedProduct.fabric || 'N/A',
+          "Quantity Ordered": item.qty || item.quantity || 1,
+          "Revenue": (item.price || matchedProduct.price || 0) * (item.qty || item.quantity || 1),
+          "Customer Name": order.user?.name || order.shippingAddress?.fullName || order.customerName || 'N/A',
+          "Customer Phone Number": order.user?.phone || order.shippingAddress?.phone || order.phone || 'N/A'
+        });
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders Insights");
+    XLSX.writeFile(workbook, "Niva_Handlooms_Order_Insights.xlsx");
+  };
+  
   const handleUpdateProduct = async () => {
     if (!editingProductId || !editProduct) {
       return;
@@ -307,7 +361,6 @@ const Admin = () => {
   const getMonthlyRevenueData = () => {
     const monthsMap = {};
     const now = new Date();
-    // Generate last 6 months list for chronological display
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
@@ -347,15 +400,13 @@ const Admin = () => {
   const statusCounts = getOrderStatusCounts();
   const totalOrdersCount = orders.length || 1;
 
-  // Status Colors
   const statusColors = {
-    Requested: '#f59e0b', // Amber
-    Approved: '#3b82f6',  // Blue
-    Rejected: '#ef4444',  // Red
-    Completed: '#10b981', // Green
+    Requested: '#f59e0b',
+    Approved: '#3b82f6',
+    Rejected: '#ef4444',
+    Completed: '#10b981',
   };
 
-  // Build SVG Pie Slices
   let cumulativePercent = 0;
   const pieSlices = Object.keys(statusCounts).map((status) => {
     const count = statusCounts[status];
@@ -905,16 +956,22 @@ const Admin = () => {
       {activeTab === 'insights' && (
         <div className="admin-content-grid">
           
-          {/* Card 1: Monthly Revenue Line Graph */}
+          {/* Card 1: Monthly Revenue Line Graph & Excel Export Button */}
           <div className="admin-card">
-            <h3><TrendingUp size={20} className="icon-accent" /> Monthly Revenue Trend</h3>
-            <p className="sub-info" style={{ marginTop: '-8px', marginBottom: '20px' }}>
-              Hover or touch data points to view exact revenue amounts.
-            </p>
+            <div className="insights-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <h3><TrendingUp size={20} className="icon-accent" /> Monthly Revenue Trend</h3>
+                <p className="sub-info" style={{ marginTop: '-4px', marginBottom: '0' }}>
+                  Hover or touch data points to view exact revenue amounts.
+                </p>
+              </div>
+              <button onClick={exportToExcel} className="export-excel-btn">
+                📥 Export Orders to Excel
+              </button>
+            </div>
 
             <div className="line-graph-container">
               <svg viewBox="0 0 600 250" className="revenue-svg">
-                {/* Horizontal Grid lines */}
                 {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
                   const y = 30 + ratio * 160;
                   const val = Math.round(maxRevenue * (1 - ratio));
@@ -928,7 +985,6 @@ const Admin = () => {
                   );
                 })}
 
-                {/* Polyline path coordinates */}
                 {(() => {
                   const pts = monthlyData.map((d, index) => {
                     const x = 70 + index * (500 / (monthlyData.length - 1 || 1));
@@ -940,7 +996,6 @@ const Admin = () => {
 
                   return (
                     <>
-                      {/* Trend Line */}
                       <polyline
                         fill="none"
                         stroke="#d97706"
@@ -950,7 +1005,6 @@ const Admin = () => {
                         strokeLinejoin="round"
                       />
 
-                      {/* Data Points */}
                       {pts.map((p, idx) => (
                         <g key={idx} className="graph-node">
                           <circle
@@ -975,7 +1029,6 @@ const Admin = () => {
                 })()}
               </svg>
 
-              {/* Hover / Touch Tooltip Box */}
               {hoveredPoint && (
                 <div className="graph-tooltip">
                   <strong>{hoveredPoint.month}</strong>
@@ -993,8 +1046,6 @@ const Admin = () => {
             </p>
 
             <div className="insights-split-grid">
-              {/* Visual Pie / Donut representation */}
-              {/* Visual Pie / Donut representation */}
               <div className="pie-chart-wrapper">
                 <svg viewBox="0 0 120 120" className="pie-svg">
                   <circle cx="60" cy="60" r="45" fill="#f8fafc" />
@@ -1024,7 +1075,6 @@ const Admin = () => {
                       );
                     });
                   })()}
-                  {/* Counter-rotation apply ki hai taaki text bilkul seedha aaye */}
                   <g transform="rotate(90 60 60)">
                     <text x="60" y="57" fontSize="15" fontWeight="bold" fill="#1e293b" textAnchor="middle">
                       {orders.length}
@@ -1036,7 +1086,6 @@ const Admin = () => {
                 </svg>
               </div>
 
-              {/* Numerical Legend & Counts */}
               <div className="status-legend-list">
                 {pieSlices.map((slice, idx) => (
                   <div key={idx} className="legend-item-card">

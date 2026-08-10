@@ -241,6 +241,7 @@
   padding: 80px;
   color: #64748b;
 }
+
 /* Device Image Upload Styling */
 .file-upload-box {
   display: flex;
@@ -287,6 +288,7 @@
   color: #10b981;
   font-weight: 600;
 }
+
 /* Orders Filter Styles */
 .orders-header-row {
   display: flex;
@@ -327,6 +329,7 @@
   cursor: pointer;
   padding: 4px 0;
 }
+
 /* Insights Tab Styles */
 .line-graph-container {
   position: relative;
@@ -464,6 +467,31 @@
 .legend-percentage {
   color: #64748b;
   font-size: 12px;
+}
+
+/* Excel Export Button Style */
+.export-excel-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.export-excel-btn:hover {
+  background-color: #059669;
+}
+
+.export-excel-btn:active {
+  transform: scale(0.98);
 }
 
 @keyframes fadeIn {
