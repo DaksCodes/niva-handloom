@@ -1,25 +1,11 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+// Initialize Resend with your API Key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendAdminOrderEmail = async (order) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      // Kabhi kabhi network delay ki wajah se Render par timeout hota hai, isliye limit badha do
-      connectionTimeout: 10000, 
-      greetingTimeout: 10000,
-      socketTimeout: 10000
-    });
-
-    // Products ki list ko HTML table rows mein convert karna
-    // Aapke schema mein quantity ko 'qty' kaha gaya hai
     const orderItemsHtml = order.orderItems.map((item) => {
-      // Agar product populate hua hai toh uska naam, warna default text
       const productName = item.product ? item.product.name : 'Handloom Product';
       const productPrice = item.price || item.product?.price || 'N/A';
       
@@ -39,9 +25,10 @@ const sendAdminOrderEmail = async (order) => {
       address = `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`;
     }
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.ADMIN_EMAIL,
+    // Send email using Resend HTTP API
+    const { data, error } = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Resend ka default testing email sender
+      to: process.env.ADMIN_EMAIL,   // Aapka verified admin email
       subject: `New Order Received! Order ID: ${order._id}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -73,10 +60,14 @@ const sendAdminOrderEmail = async (order) => {
             </table>
         </div>
       `,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
-    console.log('Admin notification email sent successfully');
+    if (error) {
+      console.error('Resend API Error:', error);
+      return;
+    }
+
+    console.log('Admin notification email sent successfully via Resend!', data);
   } catch (error) {
     console.error('Error sending email:', error);
   }
