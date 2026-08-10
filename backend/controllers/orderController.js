@@ -21,40 +21,105 @@ const normalizeOrder = (order) => {
 // @access  Private
 const createOrder = async (req, res) => {
   try {
-    const { orderItems, deliveryMethod, shippingAddress, totalPrice } = req.body;
+    const { orderItems, deliveryMethod, shippingAddress } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       return res.status(400).json({ message: 'No order items' });
     }
 
+    const productIds = orderItems.map((item) => item.product);
+    const products = await Product.find({ _id: { $in: productIds } }).select(
+      '_id name currentStock showDiscount discountedPrice originalPrice price'
+    );
+
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+    const issues = [];
+    const sanitizedItems = [];
+    let computedTotal = 0;
+
+    for (const item of orderItems) {
+      const productId = String(item.product);
+      const qty = Number(item.qty);
+      const product = productMap.get(productId);
+
+      if (!product) {
+        issues.push({ productId, message: 'Product not found' });
+        continue;
+      }
+
+      if (!Number.isFinite(qty) || qty <= 0) {
+        issues.push({ productId, productName: product.name, message: 'Invalid quantity' });
+        continue;
+      }
+
+      const stock = Number(product.currentStock || 0);
+
+      if (stock <= 0) {
+        issues.push({ productId, productName: product.name, message: 'Sold out' });
+        continue;
+      }
+
+      if (qty > stock) {
+        issues.push({
+          productId,
+          productName: product.name,
+          message: 'Requested quantity exceeds stock',
+          availableStock: stock,
+        });
+        continue;
+      }
+
+      const finalPrice =
+        product.showDiscount && Number(product.discountedPrice) > 0
+          ? Number(product.discountedPrice)
+          : Number(product.originalPrice ?? product.price ?? 0);
+
+      sanitizedItems.push({
+        product: product._id,
+        qty,
+        price: finalPrice,
+      });
+
+      computedTotal += finalPrice * qty;
+    }
+
+    if (issues.length > 0) {
+      return res.status(400).json({
+        message: 'Some items are unavailable or out of stock',
+        issues,
+      });
+    }
+
+    if (sanitizedItems.length === 0) {
+      return res.status(400).json({ message: 'No valid order items' });
+    }
+
     const order = new Order({
       user: req.user._id,
-      orderItems,
-      deliveryMethod, // 'Home Delivery' or 'Self-Pickup'
+      orderItems: sanitizedItems,
+      deliveryMethod,
       shippingAddress: deliveryMethod === 'Home Delivery' ? shippingAddress : {},
-      totalPrice,
+      totalPrice: computedTotal,
       orderStatus: 'Requested',
       paymentStatus: 'Pending',
     });
 
     const createdOrder = await order.save();
+
     try {
-      // User ki details (naam, email) aur Product ki details email ke liye nikal rahe hain
       await createdOrder.populate('user', 'name email');
       await createdOrder.populate('orderItems.product', 'name price');
-      
-      // Email bhejein (bina await ke taaki api response slow na ho)
       sendAdminOrderEmail(createdOrder);
       // sendAdminSms(createdOrder);
     } catch (emailError) {
-      console.error('Order ban gaya par email bhejne mein error aayi:', emailError);
+      console.error('Order created but failed to send email:', emailError);
     }
+
     res.status(201).json(createdOrder);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 // @desc    Get logged in user orders (Customer view)
 // @route   GET /api/orders/myorders
 // @access  Private
@@ -103,15 +168,28 @@ const updateOrderStatus = async (req, res) => {
     }
 
     if (orderStatus === 'Approved' && !order.isStockDeducted) {
-      for (const item of order.orderItems) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: {
-            currentStock: -item.qty,
-          }
-        });
-      }
-      order.isStockDeducted = true;
+  for (const item of order.orderItems) {
+    const product = await Product.findById(item.product).select('name currentStock');
+
+    if (!product) {
+      return res.status(400).json({ message: 'One or more ordered products no longer exist' });
     }
+
+    if (Number(product.currentStock || 0) < Number(item.qty)) {
+      return res.status(400).json({
+        message: `Insufficient stock for ${product.name}. Available: ${product.currentStock}`,
+      });
+    }
+  }
+
+  for (const item of order.orderItems) {
+    await Product.findByIdAndUpdate(item.product, {
+      $inc: { currentStock: -Number(item.qty) },
+    });
+  }
+
+  order.isStockDeducted = true;
+}
 
     order.orderStatus = orderStatus;
 

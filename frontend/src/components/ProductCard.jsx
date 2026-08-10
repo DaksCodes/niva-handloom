@@ -7,7 +7,8 @@ import { useWishlist } from '../context/WishlistContext';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
-  const isSoldOut = product.currentStock === 0;
+  const availableStock = Math.max(Number(product.currentStock) || 0, 0);
+const isSoldOut = availableStock <= 0;
   const [qty, setQty] = useState(0);
   const { user } = useAuth();
   const { cartItems, cartReady, addItem, setItemQuantity, getItemQuantity } = useCart();
@@ -22,32 +23,33 @@ const ProductCard = ({ product }) => {
   }, [cartItems, cartReady, getItemQuantity, product._id]);
 
   const addToCart = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
 
-    if (isSoldOut) {
-      return;
-    }
+  if (isSoldOut || qty >= availableStock) {
+    return;
+  }
 
-    if (user?.token) {
-      await addItem(product);
-    } else {
-      const nextQty = qty > 0 ? qty + 1 : 1;
-      await setItemQuantity(product, nextQty);
-    }
-  };
+  if (user?.token) {
+    await addItem(product);
+  } else {
+    const nextQty = qty > 0 ? qty + 1 : 1;
+    const cappedQty = Math.min(nextQty, availableStock);
+    await setItemQuantity(product, cappedQty);
+  }
+};
 
   const changeQty = async (e, delta) => {
-    e.preventDefault();
-    e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
 
-    if (isSoldOut) {
-      return;
-    }
+  if (isSoldOut) {
+    return;
+  }
 
-    const nextQty = qty + delta;
-    await setItemQuantity(product, nextQty);
-  };
+  const nextQty = Math.min(Math.max(qty + delta, 0), availableStock);
+  await setItemQuantity(product, nextQty);
+};
 
   const handleWishlistToggle = async (e) => {
     e.preventDefault();

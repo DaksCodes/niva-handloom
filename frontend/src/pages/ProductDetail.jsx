@@ -30,10 +30,14 @@ const ProductDetail = () => {
   }, [id]);
 
   const addToCart = async () => {
-    await addItem(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+  if (isSoldOut) {
+    return;
+  }
+
+  await addItem(product);
+  setAdded(true);
+  setTimeout(() => setAdded(false), 2000);
+};
 
   const handleWishlistToggle = async () => {
     await toggleItem(product);
@@ -42,7 +46,7 @@ const ProductDetail = () => {
   if (loading) return <div className="container detail-loading">Loading details...</div>;
   if (!product) return <div className="container detail-loading">Product not found.</div>;
 
-  const isSoldOut = product.currentStock === 0;
+  const isSoldOut = Number(product.currentStock) <= 0;
 
   return (
     <div className="container product-detail-page">

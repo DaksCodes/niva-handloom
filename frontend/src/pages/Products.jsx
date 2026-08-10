@@ -9,12 +9,11 @@ const Products = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter States
+  // Filter States (minPrice hata diya hai)
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedFabrics, setSelectedFabrics] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
-  const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState(5000);
 
   const availableCategories = ['Bedsheet', 'Deewan Set'];
@@ -38,7 +37,7 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  // Filter Logic (Runs whenever filter state changes)
+  // Filter Logic
   useEffect(() => {
     let result = products;
 
@@ -57,19 +56,19 @@ const Products = () => {
       result = result.filter((p) => selectedFabrics.includes(p.fabricType));
     }
 
+    // Type Filter
     if (selectedTypes.length > 0) {
       result = result.filter((p) => selectedTypes.includes(p.type));
     }
 
-    // Price Filter
+    // Price Filter (Sirf maxPrice par filter)
     result = result.filter((p) => {
       const finalPrice = p.price ?? (p.showDiscount && p.discountedPrice ? p.discountedPrice : p.originalPrice);
-      const meetsMin = minPrice === '' ? true : finalPrice >= Number(minPrice);
-      return meetsMin && finalPrice <= maxPrice;
+      return finalPrice <= maxPrice;
     });
 
     setFilteredProducts(result);
-  }, [selectedCategories, selectedSizes, selectedFabrics, selectedTypes, minPrice, maxPrice, products]);
+  }, [selectedCategories, selectedSizes, selectedFabrics, selectedTypes, maxPrice, products]);
 
   const handleSizeChange = (size) => {
     setSelectedSizes((prev) =>
@@ -88,7 +87,6 @@ const Products = () => {
     setSelectedSizes([]);
     setSelectedFabrics([]);
     setSelectedTypes([]);
-    setMinPrice('');
     setMaxPrice(5000);
   };
 
@@ -99,42 +97,37 @@ const Products = () => {
         <div className="filter-header">
           <h3><Filter size={18} /> Filters</h3>
           <button onClick={resetFilters} className="reset-btn">
-            <RotateCcw size={14} /> Reset
+            <RotateCcw size={13} /> Reset
           </button>
         </div>
 
         {/* Category Filter */}
         <div className="filter-group">
           <h4>Category</h4>
-          {availableCategories.map((category) => (
-            <label key={category} className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(category)}
-                onChange={() =>
-                  setSelectedCategories((prev) =>
-                    prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
-                  )
-                }
-              />
-              <span>{category}</span>
-            </label>
-          ))}
+          <div className="filter-options-list">
+            {availableCategories.map((category) => (
+              <label key={category} className="products-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(category)}
+                  onChange={() =>
+                    setSelectedCategories((prev) =>
+                      prev.includes(category) ? prev.filter((item) => item !== category) : [...prev, category]
+                    )
+                  }
+                />
+                <span>{category}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Price Range */}
         <div className="filter-group">
-          <h4>Price Range</h4>
-          <label className="checkbox-label">
-            <span>Minimum</span>
-            <input
-              type="number"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              placeholder="0"
-            />
-          </label>
-          <h4>Max Price: ₹{maxPrice}</h4>
+          <div className="price-title-row">
+            <h4>Price Range</h4>
+            <span className="price-badge">Up to ₹{maxPrice}</span>
+          </div>
           <input
             type="range"
             min="300"
@@ -149,50 +142,56 @@ const Products = () => {
         {/* Size Filter */}
         <div className="filter-group">
           <h4>Size</h4>
-          {availableSizes.map((size) => (
-            <label key={size} className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={selectedSizes.includes(size)}
-                onChange={() => handleSizeChange(size)}
-              />
-              <span>{size}</span>
-            </label>
-          ))}
+          <div className="filter-options-list">
+            {availableSizes.map((size) => (
+              <label key={size} className="products-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={selectedSizes.includes(size)}
+                  onChange={() => handleSizeChange(size)}
+                />
+                <span>{size}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Fabric Filter */}
         <div className="filter-group">
           <h4>Fabric Type</h4>
-          {availableFabrics.map((fabric) => (
-            <label key={fabric} className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={selectedFabrics.includes(fabric)}
-                onChange={() => handleFabricChange(fabric)}
-              />
-              <span>{fabric}</span>
-            </label>
-          ))}
+          <div className="filter-options-list">
+            {availableFabrics.map((fabric) => (
+              <label key={fabric} className="products-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={selectedFabrics.includes(fabric)}
+                  onChange={() => handleFabricChange(fabric)}
+                />
+                <span>{fabric}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Type Filter */}
         <div className="filter-group">
           <h4>Type</h4>
-          {availableTypes.map((type) => (
-            <label key={type} className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={selectedTypes.includes(type)}
-                onChange={() =>
-                  setSelectedTypes((prev) =>
-                    prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
-                  )
-                }
-              />
-              <span>{type}</span>
-            </label>
-          ))}
+          <div className="filter-options-list">
+            {availableTypes.map((type) => (
+              <label key={type} className="products-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={selectedTypes.includes(type)}
+                  onChange={() =>
+                    setSelectedTypes((prev) =>
+                      prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
+                    )
+                  }
+                />
+                <span>{type}</span>
+              </label>
+            ))}
+          </div>
         </div>
       </aside>
 
