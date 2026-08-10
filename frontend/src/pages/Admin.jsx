@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Package, ShoppingBag, Edit3, Save, AlertCircle, Trash2, Filter } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Admin.css';
 
@@ -12,6 +12,11 @@ const Admin = () => {
   const [apiError, setApiError] = useState('');
   const [editingProductId, setEditingProductId] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
+
+  // Order Filters State
+  const [filterDelivery, setFilterDelivery] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterDate, setFilterDate] = useState('All');
 
   // New Product Form State
   const [newProduct, setNewProduct] = useState({
@@ -27,10 +32,8 @@ const Admin = () => {
     size: 'Double',
     fabricType: 'Cotton',
     currentStock: 10,
-    // imageUrl: '',
     imageFile: null,
     imagePreview: '',
-    oneLinerDescription: '',
   });
 
   const fileInputRef = useRef(null);
@@ -124,60 +127,59 @@ const Admin = () => {
 
   // Add Product Handler
   const handleAddProduct = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!newProduct.imageFile) {
-    alert('Please select an image first!');
-    return;
-  }
+    if (!newProduct.imageFile) {
+      alert('Please select an image first!');
+      return;
+    }
 
-  try {
-    const formData = new FormData();
-    formData.append('category', newProduct.category);
-    formData.append('name', newProduct.name);
-    formData.append('companyName', newProduct.companyName);
-    formData.append('oneLinerDescription', newProduct.oneLinerDescription);
-    formData.append('type', newProduct.type);
-    formData.append('size', newProduct.size);
-    formData.append('fabricType', newProduct.fabricType);
-    formData.append('price', newProduct.price);
-    formData.append('originalPrice', newProduct.originalPrice);
-    formData.append('discountedPrice', newProduct.discountedPrice || 0);
-    formData.append('showDiscount', newProduct.showDiscount);
-    formData.append('initialQuantity', newProduct.currentStock);
-    formData.append('image', newProduct.imageFile);
+    try {
+      const formData = new FormData();
+      formData.append('category', newProduct.category);
+      formData.append('name', newProduct.name);
+      formData.append('companyName', newProduct.companyName);
+      formData.append('oneLinerDescription', newProduct.oneLinerDescription);
+      formData.append('type', newProduct.type);
+      formData.append('size', newProduct.size);
+      formData.append('fabricType', newProduct.fabricType);
+      formData.append('price', newProduct.price);
+      formData.append('originalPrice', newProduct.originalPrice);
+      formData.append('discountedPrice', newProduct.discountedPrice || 0);
+      formData.append('showDiscount', newProduct.showDiscount);
+      formData.append('initialQuantity', newProduct.currentStock);
+      formData.append('image', newProduct.imageFile);
 
-    await axios.post('https://niva-handloom-backend.onrender.com/api/products', formData, {
-      headers: {
-        Authorization: `Bearer ${user?.token || ''}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+      await axios.post('https://niva-handloom-backend.onrender.com/api/products', formData, {
+        headers: {
+          Authorization: `Bearer ${user?.token || ''}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-    alert('Product Added Successfully!');
-    setNewProduct({
-      category: 'Bedsheet',
-      name: '',
-      companyName: 'Niva Handlooms',
-      oneLinerDescription: '',
-      type: 'Fitted',
-      price: '',
-      originalPrice: '',
-      discountedPrice: '',
-      showDiscount: false,
-      size: 'Double',
-      fabricType: 'Cotton',
-      currentStock: 10,
-      imageFile: null,
-      imagePreview: '',
-      oneLinerDescription: '',
-    });
-    handleClearImage();
-    fetchData();
-  } catch (err) {
-    alert(err.response?.data?.message || 'Failed to add product');
-  }
-};
+      alert('Product Added Successfully!');
+      setNewProduct({
+        category: 'Bedsheet',
+        name: '',
+        companyName: 'Niva Handlooms',
+        oneLinerDescription: '',
+        type: 'Fitted',
+        price: '',
+        originalPrice: '',
+        discountedPrice: '',
+        showDiscount: false,
+        size: 'Double',
+        fabricType: 'Cotton',
+        currentStock: 10,
+        imageFile: null,
+        imagePreview: '',
+      });
+      handleClearImage();
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add product');
+    }
+  };
 
   // Update Stock Handler
   const handleUpdateStock = async (productId) => {
@@ -233,35 +235,76 @@ const Admin = () => {
     }
   };
 
-
   const handleClearImage = () => {
-  setNewProduct((prev) => ({
-    ...prev,
-    imageFile: null,
-    imagePreview: '',
-  }));
+    setNewProduct((prev) => ({
+      ...prev,
+      imageFile: null,
+      imagePreview: '',
+    }));
 
-  if (fileInputRef.current) {
-    fileInputRef.current.value = '';
-  }
-};
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
-  // Device se File pick karke Base64 string banane ka function
-const handleImageChange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (file.size > 2 * 1024 * 1024) {
-    alert('File size too large! Please select an image under 2MB.');
-    return;
-  }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size too large! Please select an image under 2MB.');
+      return;
+    }
 
-  setNewProduct((prev) => ({
-    ...prev,
-    imageFile: file,
-    imagePreview: URL.createObjectURL(file),
-  }));
-};
+    setNewProduct((prev) => ({
+      ...prev,
+      imageFile: file,
+      imagePreview: URL.createObjectURL(file),
+    }));
+  };
+
+  // Sorted and Filtered Orders Calculation
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = new Date(a.createdAt || a.date || 0);
+    const dateB = new Date(b.createdAt || b.date || 0);
+    return dateB - dateA; // Descending order (latest first)
+  });
+
+  const filteredOrders = sortedOrders.filter((o) => {
+    const statusVal = o.orderStatus || o.status || 'Requested';
+    const deliveryVal = o.deliveryMethod || '';
+    const orderDate = new Date(o.createdAt || o.date || Date.now());
+    const now = new Date();
+
+    // Delivery Filter
+    if (filterDelivery !== 'All' && deliveryVal !== filterDelivery) {
+      return false;
+    }
+
+    // Status Filter
+    if (filterStatus !== 'All' && statusVal !== filterStatus) {
+      return false;
+    }
+
+    // Date Filter
+    if (filterDate === 'this_month') {
+      if (orderDate.getMonth() !== now.getMonth() || orderDate.getFullYear() !== now.getFullYear()) {
+        return false;
+      }
+    } else if (filterDate === 'last_3_months') {
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(now.getMonth() - 3);
+      if (orderDate < threeMonthsAgo) {
+        return false;
+      }
+    } else if (filterDate === 'yearly') {
+      if (orderDate.getFullYear() !== now.getFullYear()) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   if (loading) {
     return (
@@ -304,7 +347,6 @@ const handleImageChange = (e) => {
       {/* Tab 1: Products */}
       {activeTab === 'products' && (
         <div className="admin-content-grid">
-          
           {/* Form Card */}
           <div className="admin-card">
             <h3><PlusCircle size={20} className="icon-accent" /> Add New Product</h3>
@@ -423,34 +465,34 @@ const handleImageChange = (e) => {
                 />
 
                 {newProduct.imagePreview && (
-  <div className="preview-container" style={{ position: 'relative' }}>
-    <img src={newProduct.imagePreview} alt="Preview" className="img-preview" />
-    <span className="preview-text">Preview Selected Image</span>
+                  <div className="preview-container" style={{ position: 'relative' }}>
+                    <img src={newProduct.imagePreview} alt="Preview" className="img-preview" />
+                    <span className="preview-text">Preview Selected Image</span>
 
-    <button
-      type="button"
-      onClick={handleClearImage}
-      aria-label="Remove selected image"
-      title="Remove selected image"
-      style={{
-        position: 'absolute',
-        top: '8px',
-        right: '8px',
-        border: 'none',
-        background: 'rgba(0, 0, 0, 0.65)',
-        color: '#fff',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
-        display: 'grid',
-        placeItems: 'center',
-        cursor: 'pointer',
-      }}
-    >
-      <Trash2 size={16} />
-    </button>
-  </div>
-)}
+                    <button
+                      type="button"
+                      onClick={handleClearImage}
+                      aria-label="Remove selected image"
+                      title="Remove selected image"
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        border: 'none',
+                        background: 'rgba(0, 0, 0, 0.65)',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'grid',
+                        placeItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button type="submit" className="submit-btn">Add Product to Store</button>
@@ -687,12 +729,47 @@ const handleImageChange = (e) => {
       {/* Tab 2: Orders */}
       {activeTab === 'orders' && (
         <div className="admin-card">
-          <h3>Customer Orders ({orders.length})</h3>
+          <div className="orders-header-row">
+            <h3>Customer Orders ({filteredOrders.length} of {orders.length})</h3>
+            
+            {/* Filters Bar */}
+            <div className="order-filters-bar">
+              <div className="filter-group">
+                <Filter size={14} />
+                <select value={filterDelivery} onChange={(e) => setFilterDelivery(e.target.value)} className="filter-select">
+                  <option value="All">All Delivery Types</option>
+                  <option value="Home Delivery">Home Delivery</option>
+                  <option value="Self-Pickup">Self-Pickup</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="filter-select">
+                  <option value="All">All Statuses</option>
+                  <option value="Requested">Requested</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <select value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="filter-select">
+                  <option value="All">All Dates / Time</option>
+                  <option value="this_month">This Month</option>
+                  <option value="last_3_months">Last 1-3 Months</option>
+                  <option value="yearly">Yearly (This Year)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="table-wrapper">
             <table className="styled-table">
               <thead>
                 <tr>
                   <th>Order ID</th>
+                  <th>Order Date</th>
                   <th>Customer</th>
                   <th>Amount</th>
                   <th>Delivery</th>
@@ -700,33 +777,50 @@ const handleImageChange = (e) => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => {
-                  const statusVal = o.orderStatus || o.status || 'Requested';
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                      No orders found matching the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOrders.map((o) => {
+                    const statusVal = o.orderStatus || o.status || 'Requested';
+                    const orderDateStr = o.createdAt || o.date;
+                    const formattedDate = orderDateStr
+                      ? new Date(orderDateStr).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : 'N/A';
 
-                  return (
-                    <tr key={o._id}>
-                      <td><strong>#{o._id.slice(-6).toUpperCase()}</strong></td>
-                      <td>
-                        <strong>{o.user?.name || 'Customer'}</strong>
-                        <p className="sub-info">{o.user?.email}</p>
-                      </td>
-                      <td><strong>₹{o.totalPrice}</strong></td>
-                      <td>{o.deliveryMethod}</td>
-                      <td>
-                        <select
-                          value={statusVal}
-                          onChange={(e) => handleStatusChange(o._id, e.target.value)}
-                          className={`status-select ${statusVal.toLowerCase()}`}
-                        >
-                          <option value="Requested">Requested</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Rejected">Rejected</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
+                    return (
+                      <tr key={o._id}>
+                        <td><strong>#{o._id.slice(-6).toUpperCase()}</strong></td>
+                        <td>{formattedDate}</td>
+                        <td>
+                          <strong>{o.user?.name || 'Customer'}</strong>
+                          <p className="sub-info">{o.user?.email}</p>
+                        </td>
+                        <td><strong>₹{o.totalPrice}</strong></td>
+                        <td>{o.deliveryMethod}</td>
+                        <td>
+                          <select
+                            value={statusVal}
+                            onChange={(e) => handleStatusChange(o._id, e.target.value)}
+                            className={`status-select ${statusVal.toLowerCase()}`}
+                          >
+                            <option value="Requested">Requested</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
