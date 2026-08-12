@@ -102,9 +102,16 @@ const createOrder = async (req, res) => {
       totalPrice: computedTotal,
       orderStatus: 'Requested',
       paymentStatus: 'Pending',
+      isStockDeducted: true
     });
 
     const createdOrder = await order.save();
+
+    for (const item of sanitizedItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { currentStock: -Number(item.qty) }
+      });
+    }
 
     try {
       await createdOrder.populate('user', 'name email');
@@ -167,29 +174,38 @@ const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ message: 'Order status must be Approved or Rejected' });
     }
 
-    if (orderStatus === 'Approved' && !order.isStockDeducted) {
-  for (const item of order.orderItems) {
-    const product = await Product.findById(item.product).select('name currentStock');
-
-    if (!product) {
-      return res.status(400).json({ message: 'One or more ordered products no longer exist' });
+    if (orderStatus === 'Rejected' && order.isStockDeducted !== false) {
+      for (const item of order.orderItems) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { currentStock: Number(item.qty) } // Minus hui thi, wapas plus kardi
+        });
+      }
+      order.isStockDeducted = false; // Mark kar diya ki stock wapas de diya gaya hai
     }
 
-    if (Number(product.currentStock || 0) < Number(item.qty)) {
-      return res.status(400).json({
-        message: `Insufficient stock for ${product.name}. Available: ${product.currentStock}`,
-      });
-    }
-  }
+//     if (orderStatus === 'Approved' && !order.isStockDeducted) {
+//   for (const item of order.orderItems) {
+//     const product = await Product.findById(item.product).select('name currentStock');
 
-  for (const item of order.orderItems) {
-    await Product.findByIdAndUpdate(item.product, {
-      $inc: { currentStock: -Number(item.qty) },
-    });
-  }
+//     if (!product) {
+//       return res.status(400).json({ message: 'One or more ordered products no longer exist' });
+//     }
 
-  order.isStockDeducted = true;
-}
+//     if (Number(product.currentStock || 0) < Number(item.qty)) {
+//       return res.status(400).json({
+//         message: `Insufficient stock for ${product.name}. Available: ${product.currentStock}`,
+//       });
+//     }
+//   }
+
+//   for (const item of order.orderItems) {
+//     await Product.findByIdAndUpdate(item.product, {
+//       $inc: { currentStock: -Number(item.qty) },
+//     });
+//   }
+
+//   order.isStockDeducted = true;
+// }
 
     order.orderStatus = orderStatus;
 
